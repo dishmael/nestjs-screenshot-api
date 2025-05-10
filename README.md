@@ -1,98 +1,84 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# NestJS Screenshot Service
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A NestJS-powered API service that utilizes **Puppeteer** to capture screenshots of a specified URL.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Features
+- Fetches screenshots of websites using Puppeteer
+- Returns images in PNG format (base64 string)
+- Utilizes rate limiting for free and paid tiers (WIP)
+- Utilizes authentication to determine tier (WIP)
 
-## Description
+## Installation
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Clone the repository:
 
-## Project setup
-
-```bash
-$ pnpm install
+```sh
+git clone https://github.com/yourusername/nestjs-screenshot-service.git
+cd nestjs-screenshot-service
 ```
 
-## Compile and run the project
+## Testing Site (Svelte 5)
 
-```bash
-# development
-$ pnpm run start
+```ts
+<script lang="ts">
+	let url = $state('');
+	let imageSrc: string = $state('');
+	let isLoading = $state(false);
 
-# watch mode
-$ pnpm run start:dev
+	async function getScreenshot(url: string) {
+		try {
+			isLoading = true;
+			imageSrc = '';
 
-# production mode
-$ pnpm run start:prod
+			const response = await fetch('http://localhost:3000/api/screenshot/v1', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ url })
+			});
+
+			if (!response.ok) {
+				throw new Error(`Error: ${response.status} - ${await response.text()}`);
+			}
+
+			const jsonResponse = await response.json();
+			imageSrc = jsonResponse.rawImage;
+		} catch (error) {
+			console.error('Failed to fetch screenshot:', error);
+		} finally {
+			isLoading = false; // Stop loading
+		}
+	}
+</script>
+
+<div class="flex min-h-screen flex-col items-start bg-gray-100 p-6">
+	<h1 class="mb-4 text-3xl font-bold text-gray-800">Screen Capture Test Page</h1>
+
+	<div class="space-y-4 rounded-lg bg-white p-4 shadow-lg">
+		<input
+			type="text"
+			bind:value={url}
+			placeholder="Enter URL to screenshot"
+			class="w-64 h-10 rounded-md border border-gray-300 p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+		/>
+		<button
+			class="w-48 h-10 rounded-md bg-blue-600 ml-4 px-6 py-2 text-sm text-center text-white transition hover:bg-blue-700 disabled:opacity-50"
+			onclick={() => getScreenshot(url)}
+			disabled={isLoading}
+		>
+			{isLoading ? 'Processing...' : 'Generate Screenshot'}
+		</button>
+	</div>
+
+	{#if isLoading}
+		<p class="mt-6 text-gray-600">Loading...</p>
+	{/if}
+
+	{#if imageSrc}
+		<div class="mt-6 w-full">
+			<img class="rounded-lg shadow-lg" src={imageSrc} alt="Screenshot" />
+		</div>
+	{/if}
+</div>
 ```
-
-## Run tests
-
-```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ pnpm install -g mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
